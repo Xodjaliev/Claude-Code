@@ -76,7 +76,7 @@ export class MainMenuScreen implements Screen {
       ),
     );
     window.addEventListener('keydown', (e) => {
-      if (game.ui?.current !== 'menu' || game.state !== 'menu') return;
+      if (game.ui?.current !== 'menu' || game.state !== 'menu' || document.querySelector('.start-overlay')) return;
       if (e.code === 'ArrowDown') this.setFocus((this.focus + 1) % this.items.length);
       else if (e.code === 'ArrowUp') this.setFocus((this.focus - 1 + this.items.length) % this.items.length);
       else if (e.code === 'Enter') this.items[this.focus].click();

@@ -147,7 +147,12 @@ export class InputManager {
     let nitro = this.isDown('nitro');
 
     // gamepad
-    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    let pads: (Gamepad | null)[] = [];
+    try {
+      pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    } catch {
+      /* gamepad API blocked (e.g. permissions policy inside an iframe) */
+    }
     for (const pad of pads) {
       if (!pad || !pad.connected) continue;
       const ax = pad.axes[0] ?? 0;

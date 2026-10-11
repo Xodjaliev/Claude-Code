@@ -35,6 +35,8 @@ export interface CarModel {
   flames: THREE.Mesh[];
   steeringWheel: THREE.Group;
   driverHead: THREE.Mesh;
+  /** Greenhouse glass (hidden in the cockpit view so reflections don't wash out the windscreen). */
+  glass: THREE.Mesh | null;
   driverEye: THREE.Vector3;
   hoodEye: THREE.Vector3;
   headlightPool: THREE.Mesh | null;
@@ -501,7 +503,16 @@ export function buildCarModel(def: CarDefinition, config: CarConfig, opts: CarMo
   const wheelZ = Math.min(headZ + 0.5, b.cowlZ - 0.12);
   const dashZ0 = wheelZ + 0.12;
   const dashZ1 = b.cowlZ + 0.02;
-  parts.trim.push(prep(boxAt(cabinW * 0.92, 0.14, Math.max(0.15, dashZ1 - dashZ0), 0, b.beltHeight - 0.02, (dashZ0 + dashZ1) / 2), INTERIOR));
+  // dashboard spans the whole cabin and hides the body shell when seen from the driver's seat
+  parts.trim.push(prep(boxAt(b.width * 0.86, 0.2, Math.max(0.15, dashZ1 - dashZ0 + 0.1), 0, b.beltHeight - 0.03, (dashZ0 + dashZ1) / 2 + 0.04), INTERIOR));
+  parts.trim.push(prep(boxAt(cabinW * 0.9, 0.05, 0.12, 0, b.beltHeight + 0.075, dashZ0 + 0.06, -0.35, 0, 0), new THREE.Color(0x141519)));
+  // dark cabin floor over the body shell (seen from the cockpit and through the glass)
+  parts.trim.push(prep(boxAt(cabinW * 0.97, 0.02, Math.max(0.2, b.cowlZ - b.rearBaseZ), 0, b.beltHeight + 0.012, (b.cowlZ + b.rearBaseZ) / 2), INTERIOR));
+  // door trims
+  for (const sx of [-1, 1]) {
+    const len = Math.max(0.3, dashZ0 - (headZ - 0.5));
+    parts.trim.push(prep(boxAt(0.16, 0.12, len, sx * (cabinW / 2 - 0.02), b.beltHeight + 0.0, dashZ0 - len / 2), new THREE.Color(0x232429)));
+  }
   parts.trim.push(prep(boxAt(0.36, 0.09, 0.14, driverX, b.beltHeight + 0.07, dashZ0 + 0.04), new THREE.Color(0x0d0d0f)));
   parts.screen.push(boxAt(0.3, 0.06, 0.01, driverX, b.beltHeight + 0.07, dashZ0 - 0.035, -0.3, 0, 0));
   parts.trim.push(prep(boxAt(0.22, 0.12, 0.6, 0, b.beltHeight - 0.18, headZ + 0.15), INTERIOR));
@@ -581,12 +592,12 @@ export function buildCarModel(def: CarDefinition, config: CarConfig, opts: CarMo
   // steering wheel
   const steeringWheel = new THREE.Group();
   const swMat = new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.6 });
-  const swRing = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 8, 24), swMat);
+  const swRing = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.022, 10, 32), swMat);
   const swHub = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.03), swMat);
   const swHub2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.03), swMat);
   swHub2.position.y = -0.07;
   steeringWheel.add(swRing, swHub, swHub2);
-  steeringWheel.position.set(driverX, eyeY - 0.26, wheelZ);
+  steeringWheel.position.set(driverX, eyeY - 0.3, wheelZ);
   steeringWheel.rotation.x = -0.35;
   bodyGroup.add(steeringWheel);
 
@@ -679,6 +690,7 @@ export function buildCarModel(def: CarDefinition, config: CarConfig, opts: CarMo
     flames,
     steeringWheel,
     driverHead,
+    glass: glassMesh,
     driverEye: new THREE.Vector3(driverX, eyeY, headZ + 0.06),
     hoodEye: new THREE.Vector3(0, b.beltHeight + 0.14, b.cowlZ + 0.12),
     headlightPool,

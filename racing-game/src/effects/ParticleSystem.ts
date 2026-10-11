@@ -29,7 +29,10 @@ varying vec4 vColor;
 void main() {
   vColor = aColor;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = min(aSize * uScale / max(0.1, -mvPosition.z), 512.0);
+  float depth = -mvPosition.z;
+  // fade out sprites that get close to the camera (cockpit view, smoke drifting past the lens)
+  vColor.a *= smoothstep(0.6, 4.0, depth);
+  gl_PointSize = min(aSize * uScale / max(0.1, depth), 512.0);
   gl_Position = projectionMatrix * mvPosition;
   #include <fog_vertex>
 }`;

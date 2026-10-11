@@ -155,7 +155,7 @@ function createDaySky(params: AtmosphereParams, sunDir: THREE.Vector3): Sky {
   mat.uniforms.skyIntensity = { value: params.skyIntensity };
   mat.fragmentShader = mat.fragmentShader
     .replace('uniform float time;', 'uniform float time;\nuniform float skyIntensity;')
-    .replace('gl_FragColor = vec4( texColor, 1.0 );', 'gl_FragColor = vec4( texColor * skyIntensity, 1.0 );');
+    .replace('gl_FragColor = vec4( texColor, 1.0 );', 'gl_FragColor = vec4( min( texColor * skyIntensity, vec3( 3.5 ) ), 1.0 );');
   const u = mat.uniforms;
   u.turbidity.value = params.turbidity;
   u.rayleigh.value = params.rayleigh;
@@ -222,7 +222,7 @@ export class Atmosphere {
     const envSky = params.night ? createNightSky(params, this.sunDir, glow) : createDaySky(params, this.sunDir);
     envSky.scale.setScalar(50);
     envScene.add(envSky);
-    if (params.night || params.timeOfDay === 'sunset') {
+    if (opts.cityGlow && (params.night || params.timeOfDay === 'sunset')) {
       // fake city lights / horizon glow so that car paint has something to reflect at night
       const colors = [0xffb35c, 0xfff1c9, 0x5cc8ff, 0xffd59a, 0xff4fd8, 0xfff1c9];
       for (let i = 0; i < 24; i++) {

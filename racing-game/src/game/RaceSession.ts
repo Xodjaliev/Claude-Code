@@ -542,6 +542,7 @@ export class RaceSession extends EventEmitter<{ event: RaceEvent; results: RaceR
 
     this.updateAudio();
     this.updatePositions();
+    this.updateRubberBand();
 
     // finish sequence
     if (this.finishTimer >= 0) {
@@ -643,6 +644,19 @@ export class RaceSession extends EventEmitter<{ event: RaceEvent; results: RaceR
     // the car drives itself into the cool-down lap
     this.autopilot = new AIDriver(this.view, { skill: 0.85, mistakes: 0, aggression: 0, laneBias: 0 }, 7);
     this.player.car.controller = this.autopilot;
+  }
+
+  /** Mild catch-up: AI far ahead eases off, AI far behind gets a small boost (strength by difficulty). */
+  private updateRubberBand(): void {
+    if (this.state !== 'racing' || this.config.mode !== 'race') return;
+    const band = DIFFICULTY[this.config.difficulty].band;
+    for (const r of this.racers) {
+      if (r.isPlayer || !(r.car.controller instanceof AIDriver)) continue;
+      const gap = r.progress - this.player.progress;
+      const pace = clamp(1 - gap * 0.00009 * band, 0.93, 1.05);
+      r.car.physics.speedScale = pace;
+      r.car.controller.pace = Math.min(1, pace);
+    }
   }
 
   private updatePositions(): void {

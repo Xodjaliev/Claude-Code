@@ -110,7 +110,7 @@ export class TracksScreen implements Screen {
     const d = this.detail;
     clear(d);
     const big = this.preview(def, 360);
-    big.style.cssText = 'width:100%;max-width:300px;display:block;margin:0 auto 10px;border-radius:12px;background:rgba(0,0,0,.35)';
+    big.style.cssText = 'width:100%;max-width:200px;display:block;margin:0 auto 10px;border-radius:12px;background:rgba(0,0,0,.35)';
     d.appendChild(h('div', { class: 'label' }, def.location));
     d.appendChild(h('div', { class: 'title', style: 'font-size:30px;margin-bottom:10px' }, def.name));
     d.appendChild(big);

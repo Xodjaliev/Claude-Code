@@ -42,7 +42,10 @@ export class CameraController {
 
   setMode(mode: CameraMode, car: Car | null): void {
     this.mode = mode;
-    if (car) car.model.driverHead.visible = mode !== 'cockpit';
+    if (car) {
+      car.model.driverHead.visible = mode !== 'cockpit';
+      if (car.model.glass) car.model.glass.visible = mode !== 'cockpit';
+    }
   }
 
   cycle(car: Car | null): CameraMode {

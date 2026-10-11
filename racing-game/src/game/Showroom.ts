@@ -6,13 +6,16 @@ import type { CarConfig } from '../car/Upgrades';
 import { damp } from '../utils/math';
 import { radialGlowTexture } from '../utils/textures';
 
+const CYAN = new THREE.Color(0x00e5ff);
+const PINK = new THREE.Color(0xff2bd6);
+
 export type ShowroomFraming = 'menu' | 'garage' | 'cars' | 'tracks' | 'play' | 'settings';
 
 const FRAMING: Record<ShowroomFraming, { offsetX: number; dist: number; height: number; lookY: number }> = {
   menu: { offsetX: -2.3, dist: 11.5, height: 2.4, lookY: 0.6 },
   garage: { offsetX: 2.3, dist: 10.5, height: 2.6, lookY: 0.55 },
-  cars: { offsetX: 2.0, dist: 11, height: 2.3, lookY: 0.2 },
-  tracks: { offsetX: 0, dist: 13, height: 3.2, lookY: 0.8 },
+  cars: { offsetX: 2.0, dist: 11, height: 2.2, lookY: -0.7 },
+  tracks: { offsetX: 0, dist: 17, height: 3.6, lookY: 1.6 },
   play: { offsetX: 3.0, dist: 12, height: 2.5, lookY: 0.6 },
   settings: { offsetX: 0, dist: 13, height: 2.8, lookY: 0.6 },
 };
@@ -70,18 +73,35 @@ export class Showroom {
     this.turntable.position.y = 0.08;
     this.scene.add(this.turntable);
 
-    // neon strips in the background
-    const colors = [0x00e5ff, 0xff2bd6, 0x7b5cff, 0x00e5ff, 0xff2bd6];
-    for (let i = 0; i < 5; i++) {
-      const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(colors[i]).multiplyScalar(1.4) });
+    // curved backdrop wall with neon light bands
+    const wall = new THREE.Mesh(
+      new THREE.CylinderGeometry(20, 20, 9, 64, 1, true, Math.PI * 0.55, Math.PI * 0.9),
+      new THREE.MeshStandardMaterial({ color: 0x0a0c14, roughness: 0.8, metalness: 0.2, side: THREE.BackSide }),
+    );
+    wall.position.y = 4.5;
+    this.scene.add(wall);
+    const bandColors = [0x00e5ff, 0xff2bd6];
+    [1.1, 3.6].forEach((y, i) => {
+      const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(bandColors[i]).multiplyScalar(1.3) });
       this.strips.push(m);
-      const a = -0.9 + i * 0.45;
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 9, 0.08), m);
-      strip.position.set(Math.sin(a) * 16, 4.5, -Math.cos(a) * 16);
-      this.scene.add(strip);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(19.8, 0.035, 6, 160, Math.PI * 0.9), m);
+      band.rotation.x = Math.PI / 2;
+      band.rotation.z = Math.PI * 0.55 - Math.PI / 2 + Math.PI;
+      band.position.y = y;
+      this.scene.add(band);
+    });
+    // vertical light panels behind the car
+    for (let i = 0; i < 7; i++) {
+      const a = -0.75 + i * 0.25;
+      const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(i % 2 ? 0xff2bd6 : 0x00e5ff).multiplyScalar(1.2) });
+      this.strips.push(m);
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.2, 0.06), m);
+      panel.position.set(Math.sin(a) * 19.6, 2.35, -Math.cos(a) * 19.6);
+      panel.lookAt(0, 2.35, 0);
+      this.scene.add(panel);
     }
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(30, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffffff).multiplyScalar(1.1) }));
-    bar.position.set(0, 7.5, -12);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(16, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffffff).multiplyScalar(0.9) }));
+    bar.position.set(0, 6.2, -11);
     this.scene.add(bar);
 
     // lights
@@ -92,12 +112,14 @@ export class Showroom {
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.bias = -0.0005;
     this.scene.add(key);
-    const rimL = new THREE.SpotLight(0x00e5ff, 90, 30, 0.6, 0.8, 1.5);
-    rimL.position.set(-7, 4, -5);
-    this.scene.add(rimL);
-    const rimR = new THREE.SpotLight(0xff2bd6, 90, 30, 0.6, 0.8, 1.5);
-    rimR.position.set(7, 4, -5);
-    this.scene.add(rimR);
+    const rimL = new THREE.SpotLight(0x00e5ff, 70, 30, 0.32, 0.8, 1.5);
+    rimL.position.set(-7, 3, -5);
+    rimL.target.position.set(0, 0.7, 0);
+    this.scene.add(rimL, rimL.target);
+    const rimR = new THREE.SpotLight(0xff2bd6, 70, 30, 0.32, 0.8, 1.5);
+    rimR.position.set(7, 3, -5);
+    rimR.target.position.set(0, 0.7, 0);
+    this.scene.add(rimR, rimR.target);
   }
 
   setAspect(aspect: number): void {
@@ -116,6 +138,7 @@ export class Showroom {
       this.car.dispose();
     }
     this.car = buildCarModel(def, config, { lightsOn: true, shadows: true, interior: false });
+    if (this.car.headlightPool) (this.car.headlightPool.material as THREE.MeshBasicMaterial).opacity = 0.35;
     this.car.root.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).castShadow = true;
     });
@@ -170,8 +193,8 @@ export class Showroom {
     this.camera.position.copy(camPos).addScaledVector(right, c.offsetX);
     this.camera.lookAt(right.multiplyScalar(c.offsetX).add(new THREE.Vector3(sway * 0.3, c.lookY, 0)));
     this.strips.forEach((m, i) => {
-      const pulse = 1.1 + Math.sin(this.time * 1.5 + i) * 0.45;
-      m.color.setScalar(0).add(new THREE.Color(i % 2 ? 0xff2bd6 : 0x00e5ff).multiplyScalar(pulse));
+      const pulse = 1.0 + Math.sin(this.time * 1.4 + i * 0.9) * 0.35;
+      m.color.copy(i % 2 ? PINK : CYAN).multiplyScalar(pulse);
     });
     if (this.car) {
       for (const w of this.car.wheels) w.spin.rotation.x = 0;

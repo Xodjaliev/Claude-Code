@@ -128,6 +128,9 @@ export class HUD {
         break;
       case 'go':
         this.showCount('GO!', true);
+        setTimeout(() => {
+          if (this.countdownEl.textContent === 'GO!') this.countdownEl.textContent = '';
+        }, 1100);
         break;
       case 'checkpoint':
         this.message('CHECKPOINT', e.delta === null ? formatTime(e.split) : formatDelta(e.delta), e.delta === null ? '' : e.delta <= 0 ? 'pos' : 'neg');
