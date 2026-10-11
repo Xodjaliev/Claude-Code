@@ -113,8 +113,8 @@ export class Game {
   }
 
   private resize(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const w = this.root.clientWidth || window.innerWidth;
+    const h = this.root.clientHeight || window.innerHeight;
     this.pipeline.setSize(w, h);
     this.showroom.setAspect(w / h);
     this.race?.resize(w / h);
@@ -186,7 +186,7 @@ export class Game {
         return;
       }
       this.race = race;
-      race.resize(window.innerWidth / window.innerHeight);
+      race.resize((this.root.clientWidth || window.innerWidth) / (this.root.clientHeight || window.innerHeight));
       race.on('results', (r) => this.onResults(r));
       this.input.clear();
       this.state = 'race';
